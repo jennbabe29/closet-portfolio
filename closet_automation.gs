@@ -66,3 +66,40 @@ function findHeaderRow(sheet) {
   while (sheet.getRange(row, 1).getValue() === '' && row < 10) row++;
   return row;
 }
+// ---------- Closet menu and button: Add asset ----------
+
+// Runs by itself when the sheet opens and adds the Closet menu.
+function onOpen() {
+  SpreadsheetApp.getUi()
+    .createMenu('Closet')
+    .addItem('Add asset', 'addAsset')
+    .addToUi();
+}
+
+function addAsset() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const assets = ss.getSheetByName('Assets');
+  const row = insertAtTop(assets);
+  assets.getRange(row, 1).setValue(today());
+  ss.setActiveSheet(assets);
+  assets.setActiveRange(assets.getRange(row, 2));   // cursor on Brand
+  // the formulas fill in by themselves once you type the Description
+}
+
+// Insert a blank row under the header, with the formatting and dropdowns of the row below it. Returns its number.
+function insertAtTop(sheet) {
+  const row = findHeaderRow(sheet) + 1;
+  sheet.insertRowBefore(row);
+  const width = sheet.getLastColumn();
+  sheet.getRange(row + 1, 1, 1, width)
+       .copyTo(sheet.getRange(row, 1, 1, width), SpreadsheetApp.CopyPasteType.PASTE_FORMAT, false);
+  sheet.getRange(row + 1, 1, 1, width)
+       .copyTo(sheet.getRange(row, 1, 1, width), SpreadsheetApp.CopyPasteType.PASTE_DATA_VALIDATION, false);
+  return row;
+}
+
+// Today's date with no time.
+function today() {
+  const d = new Date();
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
