@@ -3,6 +3,8 @@
 // Google Apps Script for a Google Sheet with Assets, Asset for Sale and Sale Log tabs.
 // Paste into Extensions > Apps Script, save, then reload the sheet.
 // License: MIT (see LICENSE)
+
+
 // ---------- automatic formulas ----------
 // Type a Description and the row's formulas fill in. Filled cells are never overwritten.
 
@@ -66,6 +68,8 @@ function findHeaderRow(sheet) {
   while (sheet.getRange(row, 1).getValue() === '' && row < 10) row++;
   return row;
 }
+
+
 // ---------- Closet menu and button: Add asset ----------
 
 // Runs by itself when the sheet opens and adds the Closet menu.
@@ -98,8 +102,14 @@ function insertAtTop(sheet) {
   return row;
 }
 
-// Today's date with no time.
+// Today's date in the sheet's own time zone.
 function today() {
-  const d = new Date();
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  return dateOnly(new Date());
+}
+
+// A date as text like 2026-11-03, which Sheets reads as a plain date with no time.
+// A Date object can carry the script's time zone, making Hold slightly negative.
+function dateOnly(date) {
+  const zone = SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone();
+  return Utilities.formatDate(date, zone, 'yyyy-MM-dd');
 }
