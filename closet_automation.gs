@@ -79,6 +79,7 @@ function onOpen() {
     .createMenu('Closet')
     .addItem('Add asset', 'addAsset')
     .addItem('List selected asset for sale', 'listForSale')
+    .addItem('Mark selected item as sold', 'markAsSold')
     .addToUi();
       setUpAssets();
 }
@@ -210,4 +211,35 @@ function selectedItemRow(sheet, expectedTab) {
     return 0;
   }
   return row;
+}
+// ---------- button: Mark as sold (Asset for Sale -> Sale Log) ----------
+
+function markAsSold() {
+  const ui = SpreadsheetApp.getUi();
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const source = ss.getActiveSheet();
+  const row = selectedItemRow(source, 'Asset for Sale');
+  if (!row) return;
+
+  const item = source.getRange(row, 1, 1, 10).getValues()[0];      // A:J
+  const notes = source.getRange('N' + row).getValue();
+
+  const price = ui.prompt('Sold: ' + item[1] + ' ' + item[4], 'Sold price (just the number, e.g. 85):', ui.ButtonSet.OK_CANCEL);
+  if (price.getSelectedButton() !== ui.Button.OK) return;
+  const broker = ui.prompt('Where did it sell?', 'Poshmark, eBay, The Real Real, GOAT, Depop...', ui.ButtonSet.OK_CANCEL);
+  if (broker.getSelectedButton() !== ui.Button.OK) return;
+
+  const log = ss.getSheetByName('Sale Log');
+  const newRow = insertAtTop(log);
+  log.getRange(newRow, 1).setValue(today());                        // A  Date Sold
+  log.getRange(newRow, 2, 1, 10).setValues([item]);                 // B:K <- A:J
+  log.getRange('M' + newRow).setValue(Number(price.getResponseText().replace(/[$,]/g, '')));
+  log.getRange('R' + newRow).setValue(broker.getResponseText().trim());
+  if (notes !== '') log.getRange('O' + newRow).setValue(notes);
+  fillRow(log, newRow);
+
+  source.deleteRow(row);
+  ss.setActiveSheet(log);
+  log.setActiveRange(log.getRange('P' + newRow));
+  ss.toast('Moved to Sale Log. Check Sold Profit (type it in for eBay).', 'Closet', 6);
 }
