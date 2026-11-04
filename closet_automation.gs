@@ -35,6 +35,7 @@ function onEdit(e) {
   if (!TABS[sheet.getName()]) return;
   const first = Math.max(e.range.getRow(), findHeaderRow(sheet) + 1);
   for (let row = first; row <= e.range.getLastRow(); row++) {
+     if (sheet.getName() === 'Assets') prepareAssetRow(sheet, row, e.range.getNumColumns());
     fillRow(sheet, row);
   }
 }
@@ -77,7 +78,9 @@ function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu('Closet')
     .addItem('Add asset', 'addAsset')
+    .addItem('List selected asset for sale', 'listForSale')
     .addToUi();
+      setUpAssets();
 }
 
 function addAsset() {
@@ -167,4 +170,44 @@ function prepareAssetRow(sheet, row, cellsEdited) {
          .copyTo(sheet.getRange(row, 3, 1, 5), SpreadsheetApp.CopyPasteType.PASTE_DATA_VALIDATION, false);
   }
   sheet.getRange(row, 9, 1, 3).setNumberFormat(MONEY_FORMAT);    // I:K stay dollars, even after pasting
+}
+// ---------- button: List for sale (Assets -> Asset for Sale) ----------
+
+function listForSale() {
+  const ui = SpreadsheetApp.getUi();
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const source = ss.getActiveSheet();
+  const row = selectedItemRow(source, 'Assets');
+  if (!row) return;
+
+  const item = source.getRange(row, 1, 1, 10).getValues()[0];      // A:J  Date Acquired ... Cost
+  const notes = source.getRange('N' + row).getValue();
+  const answer = ui.alert('List for sale?', item[1] + ' ' + item[4], ui.ButtonSet.YES_NO);
+  if (answer !== ui.Button.YES) return;
+
+  const forSale = ss.getSheetByName('Asset for Sale');
+  const newRow = insertAtTop(forSale);
+  forSale.getRange(newRow, 1, 1, 10).setValues([item]);
+  if (notes !== '') forSale.getRange('N' + newRow).setValue(notes);
+  fillRow(forSale, newRow);
+
+  source.deleteRow(row);
+  ss.setActiveSheet(forSale);
+  forSale.setActiveRange(forSale.getRange(newRow, 1));
+  ss.toast('Moved to Asset for Sale.', 'Closet', 4);
+}
+
+// The row the cursor is on, if it's an item row on the expected tab. Otherwise explains and returns 0.
+function selectedItemRow(sheet, expectedTab) {
+  const ui = SpreadsheetApp.getUi();
+  if (sheet.getName() !== expectedTab) {
+    ui.alert('Go to the "' + expectedTab + '" tab and click on the item\'s row first.');
+    return 0;
+  }
+  const row = sheet.getActiveRange().getRow();
+  if (row <= findHeaderRow(sheet)) {
+    ui.alert('Click on the item\'s row first, then try again.');
+    return 0;
+  }
+  return row;
 }
