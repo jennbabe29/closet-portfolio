@@ -22,7 +22,7 @@ Items move through three stages, plus one exit for pieces you don't sell. Each i
 - **Automatic calculations.** Type a new item's description and its formulas fill in: Discount, Hold (days), Hold Duration, Net Loss/Gain. Existing values are never overwritten.
 - **Poshmark payouts.** Sold Profit fills in at 80% of the sale price, or price minus $2.95 under $15.
 - **Add asset.** One click adds a dated row to the top of Holdings.
-- **Easier data entry.** New rows get today's date (you can change it). Asset Class and Segment are dropdowns from a `Categories` tab you can edit, and each row only offers the Segments of its Asset Class. Size is a dropdown of the values you already use. Retail, Cost and Discount always show as dollars.
+- **Easier data entry.** New rows get today's date (you can change it). On all four item tabs, Asset Class and Segment are dropdowns from a Categories tab you can edit, and each row only offers the Segments of its Asset Class. Size is a dropdown of the values you already use. Retail, Cost and Discount always show as dollars.
 - **List for sale.** One click moves the selected asset from Holdings to Listed.
 - **Mark as sold.** One click asks for the sale price and broker, then moves the item from Listed to the Sale Log.
 - **Recycle, donate or gift.** One click asks where the piece went, then moves it from Holdings to `Recycle/Donate/Gift`.
