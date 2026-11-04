@@ -113,3 +113,58 @@ function dateOnly(date) {
   const zone = SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone();
   return Utilities.formatDate(date, zone, 'yyyy-MM-dd');
 }
+// ---------- easier data entry on Assets ----------
+
+// Asset Class, Segment and Size. The Sale Log has the same columns one to the right.
+const DROPDOWN_COLS = ['C', 'D', 'G'];
+const SALE_LOG_DROPDOWN_COLS = ['D', 'E', 'H'];
+const MONEY_FORMAT = '"$"#,##0.00';
+
+// Runs when the sheet opens: rebuilds the dropdowns and keeps Retail, Cost and Discount in dollars.
+function setUpAssets() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const assets = ss.getSheetByName('Assets');
+  const first = findHeaderRow(assets) + 1;
+  const last = assets.getMaxRows();
+  DROPDOWN_COLS.forEach((col, i) => {
+    const options = dropdownOptions(ss, i);
+    if (options.length === 0) return;
+    const rule = SpreadsheetApp.newDataValidation()
+      .requireValueInList(options, true)
+      .setAllowInvalid(true)                // you can still type something new
+      .build();
+    assets.getRange(col + first + ':' + col + last).setDataValidation(rule);
+  });
+  assets.getRange('I' + first + ':K' + last).setNumberFormat(MONEY_FORMAT);
+}
+
+// Every value already used in this column on any tab, without blanks or repeats, A to Z.
+function dropdownOptions(ss, i) {
+  const options = new Set();
+  for (const name in TABS) {
+    const sheet = ss.getSheetByName(name);
+    if (!sheet) continue;
+    const col = name === 'Sale Log' ? SALE_LOG_DROPDOWN_COLS[i] : DROPDOWN_COLS[i];
+    const first = findHeaderRow(sheet) + 1;
+    const last = sheet.getLastRow();
+    if (last < first) continue;
+    sheet.getRange(col + first + ':' + col + last).getValues().forEach(cell => {
+      const value = cell[0];
+      if (value !== '' && !(value instanceof Date)) options.add(String(value).trim());
+    });
+  }
+  return [...options].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+}
+
+// A row you just started by hand gets today's date. Rows with other data are left alone,
+// so you can change the date, and old rows without a date stay as they are.
+function prepareAssetRow(sheet, row, cellsEdited) {
+  const values = sheet.getRange(row, 1, 1, 10).getValues()[0];   // A:J
+  const filled = values.filter(v => v !== '').length;
+  if (values[0] === '' && filled >= 1 && filled <= cellsEdited) {
+    sheet.getRange(row, 1).setValue(today());
+    sheet.getRange(row + 1, 3, 1, 5)                             // C:G dropdowns from the row below
+         .copyTo(sheet.getRange(row, 3, 1, 5), SpreadsheetApp.CopyPasteType.PASTE_DATA_VALIDATION, false);
+  }
+  sheet.getRange(row, 9, 1, 3).setNumberFormat(MONEY_FORMAT);    // I:K stay dollars, even after pasting
+}
