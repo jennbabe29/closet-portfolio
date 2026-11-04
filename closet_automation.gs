@@ -80,6 +80,7 @@ function onOpen() {
     .addItem('Add asset', 'addAsset')
     .addItem('List selected asset for sale', 'listForSale')
     .addItem('Mark selected item as sold', 'markAsSold')
+    .addItem('Move selected asset to Recycle/Donate/Gift', 'moveToRecycleDonateGift')
     .addToUi();
       setUpAssets();
 }
@@ -242,4 +243,31 @@ function markAsSold() {
   ss.setActiveSheet(log);
   log.setActiveRange(log.getRange('P' + newRow));
   ss.toast('Moved to Sale Log. Check Sold Profit (type it in for eBay).', 'Closet', 6);
+}
+// ---------- button: Recycle, donate or gift (Assets -> Recycle/Donate/Gift) ----------
+
+function moveToRecycleDonateGift() {
+  const ui = SpreadsheetApp.getUi();
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const source = ss.getActiveSheet();
+  const row = selectedItemRow(source, 'Assets');
+  if (!row) return;
+
+  const item = source.getRange(row, 1, 1, 10).getValues()[0];      // A:J
+  const notes = source.getRange('N' + row).getValue();
+
+  const reason = ui.prompt('Where did it go? ' + item[1] + ' ' + item[4], 'For example: Gave to Mom, Donated, Threw out due to wear', ui.ButtonSet.OK_CANCEL);
+  if (reason.getSelectedButton() !== ui.Button.OK) return;
+
+  const tab = ss.getSheetByName('Recycle/Donate/Gift');
+  const newRow = insertAtTop(tab);
+  tab.getRange(newRow, 1, 1, 10).setValues([item]);
+  const newNotes = [reason.getResponseText().trim(), notes].filter(n => n !== '').join('; ');
+  if (newNotes !== '') tab.getRange('N' + newRow).setValue(newNotes);
+  fillRow(tab, newRow);
+
+  source.deleteRow(row);
+  ss.setActiveSheet(tab);
+  tab.setActiveRange(tab.getRange(newRow, 1));
+  ss.toast('Moved to Recycle/Donate/Gift.', 'Closet', 4);
 }
