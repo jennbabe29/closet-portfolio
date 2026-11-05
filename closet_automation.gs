@@ -89,6 +89,7 @@ function onOpen() {
     .addItem('Check order emails every hour', 'checkEmailsHourly')
     .addItem('Set API key', 'setApiKey')
     .addToUi();
+  addTotalsMenu();
   setUpTabs();
 }
 
@@ -546,4 +547,41 @@ function checkEmailsHourly() {
   const exists = ScriptApp.getProjectTriggers().some(t => t.getHandlerFunction() === 'importOrderEmails');
   if (!exists) ScriptApp.newTrigger('importOrderEmails').timeBased().everyHours(1).create();
   SpreadsheetApp.getActiveSpreadsheet().toast('Order emails will be checked every hour.', 'Closet', 4);
+}
+
+
+// ---------- totals in the menu bar ----------
+// The menu's name shows your totals next to Closet, on every tab. They update when the sheet reloads.
+
+function addTotalsMenu() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const invested = sumColumn(ss, 'Assets', 'J') + sumColumn(ss, 'Asset for Sale', 'J')
+    + sumColumn(ss, 'Recycle/Donate/Gift', 'J') + sumColumn(ss, 'Sale Log', 'K');   // Cost
+  const assets = sumColumn(ss, 'Assets', 'I') + sumColumn(ss, 'Asset for Sale', 'I');   // Retail
+  const profit = sumColumn(ss, 'Sale Log', 'Q');                                        // Net Loss/Gain
+  const name = 'Invested ' + dollars(invested) + ' · Assets ' + dollars(assets) + ' · Profit/Loss ' + dollars(profit);
+  SpreadsheetApp.getUi().createMenu(name).addItem('How to update these totals', 'explainTotals').addToUi();
+}
+
+function explainTotals() {
+  SpreadsheetApp.getActiveSpreadsheet().toast('Reload the page to update these totals.', 'Closet', 6);
+}
+
+// Adds up one column of a tab, only on rows with a Description, so total rows aren't counted twice.
+function sumColumn(ss, tabName, col) {
+  const sheet = ss.getSheetByName(tabName);
+  if (!sheet) return 0;
+  const first = findHeaderRow(sheet) + 1;
+  const last = sheet.getLastRow();
+  if (last < first) return 0;
+  const descCol = DESCRIPTION_COL[tabName] || 'E';
+  const descriptions = sheet.getRange(descCol + first + ':' + descCol + last).getValues();
+  return sheet.getRange(col + first + ':' + col + last).getValues().reduce((total, cell, i) =>
+    descriptions[i][0] !== '' && typeof cell[0] === 'number' ? total + cell[0] : total, 0);
+}
+
+// 216722.36 -> "$216,722";  -50 -> "-$50"
+function dollars(amount) {
+  const whole = Math.round(Math.abs(amount)).toLocaleString('en-US');
+  return (amount < 0 ? '-$' : '$') + whole;
 }
