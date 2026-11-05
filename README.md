@@ -27,6 +27,7 @@ Items move through three stages, plus one exit for pieces you don't sell. Each i
 - **Mark as sold.** One click asks for the sale price and broker, then moves the item from Listed to the Sale Log.
 - **Recycle, donate or gift.** One click asks where the piece went, then moves it from Holdings to `Recycle/Donate/Gift`.
 - **Read order emails with AI (optional).** Label an order confirmation `Closet/To add` in Gmail and Claude reads it. Each piece becomes a new holding with its brand, description, category, color, size, retail price and pre-tax cost. It can check every hour on its own.
+- **Totals in the menu bar.** Total invested, total assets at retail and total profit or loss sit next to the Closet menu on every tab, and update when the sheet reloads.
 
 ## Setup
 
